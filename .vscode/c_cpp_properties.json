@@ -1,0 +1,20 @@
+{
+    "configurations": [
+        {
+            "name": "STM32L0",
+            "includePath": [
+                "${workspaceFolder}/**",
+                "${workspaceFolder}/libopencm3/include"
+            ],
+            "defines": [
+                "STM32L0",
+                "STM32L053R8"
+            ],
+            "compilerPath": "/opt/homebrew/bin/arm-none-eabi-gcc",
+            "cStandard": "c11",
+            "cppStandard": "c++17",
+            "intelliSenseMode": "gcc-arm"
+        }
+    ],
+    "version": 4
+}
