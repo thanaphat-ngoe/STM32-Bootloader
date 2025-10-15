@@ -12,4 +12,4 @@ The project is still in progress
 4. make
 
 ## Hardware Memory Map
-![STM32L053R8_Overview_Hardware_Memory_Map](picsSTM32L053R8_Overview_Hardware_Memory_Map.png)
+![STM32L053R8_Overview_Hardware_Memory_Map](pics/STM32L053R8_Overview_Hardware_Memory_Map.png)
