@@ -1,12 +1,17 @@
 {
 	"configurations": [
 		{
-			"name": "ST-Link: Debug Application",
+			"name": "OpenOCD: Debug Application",
 			"cwd": "${workspaceFolder}/src",
 			"executable": "firmware.elf",
-			"servertype": "stutil",
 			"request": "launch",
 			"type": "cortex-debug",
+			"servertype": "openocd",
+			"serverpath": "/opt/homebrew/bin/openocd",
+            "configFiles": [
+                "/opt/homebrew/share/openocd/scripts/interface/stlink.cfg",
+                "/opt/homebrew/share/openocd/scripts/target/stm32l0.cfg"
+            ],
 			"device": "STM32L053R8",
 			"interface": "swd",
 			"runToEntryPoint": "main",
