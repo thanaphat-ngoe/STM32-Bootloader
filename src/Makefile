@@ -1,146 +1,177 @@
 # Be silent per default, but 'make V=1' will show all compiler calls.
 ifneq ($(V),1)
-Q      := @
-NULL   := 2>/dev/null
+Q			:= @
+NULL		:= 2>/dev/null
 endif
 
-###############################################################################
-# Directories (this Makefile lives in ./src)
-SRC_DIR        = .
-INC_DIR        = inc
-OPENCM3_DIR    = ../libopencm3
-SHARED_SRC_DIR = ../shared/src
-SHARED_INC_DIR = ../shared/inc
+# We are building from inside src/
+SRC_DIR     = .
+INC_DIR     = .
+OPENCM3_DIR = ../libopencm3
 
 BINARY = firmware
 
 ###############################################################################
-# Device / Arch (STM32L053R8)
-LIBNAME     = opencm3_stm32l0
-DEFS       += -DSTM32L0
-ARCH_FLAGS  = -mthumb -mcpu=cortex-m0plus
+# Basic Device Setup
+
+LIBNAME		= opencm3_stm32l0
+DEFS		+= -DSTM32L0
+ARCH_FLAGS	= -mthumb -mcpu=cortex-m0plus
 
 ###############################################################################
 # Linkerscript
-LDSCRIPT  = linkerscript.ld
-LDLIBS   += -l$(LIBNAME)
-LDFLAGS  += -L$(OPENCM3_DIR)/lib
+
+LDSCRIPT    = $(SRC_DIR)/STM32L053R8TX_FLASH.ld
+LDLIBS		+= -l$(LIBNAME)
+LDFLAGS		+= -L$(OPENCM3_DIR)/lib
 
 ###############################################################################
 # Includes
-DEFS      += -I$(OPENCM3_DIR)/include
-DEFS      += -I$(INC_DIR)
-DEFS      += -I$(SHARED_INC_DIR)
+
+DEFS		+= -I$(OPENCM3_DIR)/include
+DEFS		+= -I$(INC_DIR)
 
 ###############################################################################
-# Toolchain
-PREFIX   ?= arm-none-eabi-
+# Executables
 
-CC       := $(PREFIX)gcc
-CXX      := $(PREFIX)g++
-LD       := $(PREFIX)gcc
-AR       := $(PREFIX)ar
-AS       := $(PREFIX)as
-OBJCOPY  := $(PREFIX)objcopy
-OBJDUMP  := $(PREFIX)objdump
-GDB      := $(PREFIX)gdb
-STFLASH  := $(shell which st-flash)
+PREFIX		?= arm-none-eabi-
 
-OPT      := -Os
-DEBUG    := -ggdb3
-CSTD     ?= -std=c99
+CC			:= $(PREFIX)gcc
+CXX			:= $(PREFIX)g++
+LD			:= $(PREFIX)gcc
+AR			:= $(PREFIX)ar
+AS			:= $(PREFIX)as
+OBJCOPY		:= $(PREFIX)objcopy
+OBJDUMP		:= $(PREFIX)objdump
+GDB			:= $(PREFIX)gdb
+STFLASH		= $(shell which st-flash)
+OPT			:= -Os
+DEBUG		:= -ggdb3
+CSTD		?= -std=c11
 
-###############################################################################
-# Sources (only list what actually exists)
-OBJS += $(SRC_DIR)/firmware.o
-# OBJS += $(SRC_DIR)/timer.o
-# OBJS += $(SRC_DIR)/info.o
-# OBJS += $(SHARED_SRC_DIR)/core/system.o
-# OBJS += $(SHARED_SRC_DIR)/core/uart.o
-# OBJS += $(SHARED_SRC_DIR)/core/ring-buffer.o
 
 ###############################################################################
-# Compiler flags
-TGT_CFLAGS   += $(OPT) $(CSTD) $(DEBUG)
-TGT_CFLAGS   += $(ARCH_FLAGS)
-TGT_CFLAGS   += -Wextra -Wshadow -Wimplicit-function-declaration
-TGT_CFLAGS   += -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
-TGT_CFLAGS   += -fno-common -ffunction-sections -fdata-sections
+# Source files
 
-TGT_CXXFLAGS += $(OPT) $(CXXSTD) $(DEBUG)
-TGT_CXXFLAGS += $(ARCH_FLAGS)
-TGT_CXXFLAGS += -Wextra -Wshadow -Wredundant-decls -Weffc++
-TGT_CXXFLAGS += -fno-common -ffunction-sections -fdata-sections
+OBJS		+= $(SRC_DIR)/$(BINARY).o
 
-TGT_CPPFLAGS += -MD
-TGT_CPPFLAGS += -Wall -Wundef
-TGT_CPPFLAGS += $(DEFS)
+###############################################################################
+# C flags
+
+TGT_CFLAGS	+= $(OPT) $(CSTD) $(DEBUG)
+TGT_CFLAGS	+= $(ARCH_FLAGS)
+TGT_CFLAGS	+= -Wextra -Wshadow -Wimplicit-function-declaration
+TGT_CFLAGS	+= -Wredundant-decls -Wmissing-prototypes -Wstrict-prototypes
+TGT_CFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+
+###############################################################################
+# C++ flags
+
+TGT_CXXFLAGS	+= $(OPT) $(CXXSTD) $(DEBUG)
+TGT_CXXFLAGS	+= $(ARCH_FLAGS)
+TGT_CXXFLAGS	+= -Wextra -Wshadow -Wredundant-decls  -Weffc++
+TGT_CXXFLAGS	+= -fno-common -ffunction-sections -fdata-sections
+
+###############################################################################
+# C & C++ preprocessor common flags
+
+TGT_CPPFLAGS	+= -MD
+TGT_CPPFLAGS	+= -Wall -Wundef
+TGT_CPPFLAGS	+= $(DEFS)
 
 ###############################################################################
 # Linker flags
-TGT_LDFLAGS  += --static -nostartfiles
-TGT_LDFLAGS  += -T$(LDSCRIPT)
-TGT_LDFLAGS  += $(ARCH_FLAGS) $(DEBUG)
-TGT_LDFLAGS  += -Wl,-Map=$(BINARY).map -Wl,--cref
-TGT_LDFLAGS  += -Wl,--gc-sections
+
+TGT_LDFLAGS		+= --static -nostartfiles
+TGT_LDFLAGS		+= -T$(LDSCRIPT)
+TGT_LDFLAGS		+= $(ARCH_FLAGS) $(DEBUG)
+TGT_LDFLAGS		+= -Wl,-Map=$(*).map -Wl,--cref
+TGT_LDFLAGS		+= -Wl,--gc-sections
 ifeq ($(V),99)
-TGT_LDFLAGS  += -Wl,--print-gc-sections
+TGT_LDFLAGS		+= -Wl,--print-gc-sections
 endif
 
-# C runtime libs
-LDLIBS += -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
+###############################################################################
+# Used libraries
+
+LDLIBS		+= -Wl,--start-group -lc -lgcc -lnosys -Wl,--end-group
 
 ###############################################################################
-# Targets
+###############################################################################
+###############################################################################
 
 .SUFFIXES: .elf .bin .hex .srec .list .map .images
 .SECONDEXPANSION:
 .SECONDARY:
 
-all: $(BINARY).elf $(BINARY).bin
+all: elf bin
 
-# Library: build libopencm3 if missing
+elf: $(BINARY).elf
+bin: $(BINARY).bin
+hex: $(BINARY).hex
+srec: $(BINARY).srec
+list: $(BINARY).list
+GENERATED_BINARIES=$(BINARY).elf $(BINARY).bin $(BINARY).hex $(BINARY).srec $(BINARY).list $(BINARY).map
+
+images: $(BINARY).images
+flash: $(BINARY).flash
+
 $(OPENCM3_DIR)/lib/lib$(LIBNAME).a:
 ifeq (,$(wildcard $@))
 	$(warning $(LIBNAME).a not found, attempting to rebuild in $(OPENCM3_DIR))
 	$(MAKE) -C $(OPENCM3_DIR)
 endif
 
-# Link to ELF
-$(BINARY).elf: $(OBJS) $(LDSCRIPT) $(OPENCM3_DIR)/lib/lib$(LIBNAME).a Makefile
-	$(Q)$(LD) $(TGT_LDFLAGS) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $@
+# Define a helper macro for debugging make errors online
+# you can type "make print-OPENCM3_DIR" and it will show you
+# how that ended up being resolved by all of the included
+# makefiles.
+print-%:
+	@echo $*=$($*)
 
-# Images
-$(BINARY).bin: $(BINARY).elf
-	$(Q)$(OBJCOPY) -Obinary $< $@
+%.images: %.bin %.hex %.srec %.list %.map
+	@#printf "*** $* images generated ***\n"
 
-$(BINARY).hex: $(BINARY).elf
-	$(Q)$(OBJCOPY) -Oihex $< $@
+%.bin: %.elf
+	@#printf "  OBJCOPY $(*).bin\n"
+	$(Q)$(OBJCOPY) -Obinary $(*).elf $(*).bin
 
-$(BINARY).srec: $(BINARY).elf
-	$(Q)$(OBJCOPY) -Osrec $< $@
+%.hex: %.elf
+	@#printf "  OBJCOPY $(*).hex\n"
+	$(Q)$(OBJCOPY) -Oihex $(*).elf $(*).hex
 
-$(BINARY).list: $(BINARY).elf
-	$(Q)$(OBJDUMP) -S $< > $@
+%.srec: %.elf
+	@#printf "  OBJCOPY $(*).srec\n"
+	$(Q)$(OBJCOPY) -Osrec $(*).elf $(*).srec
 
-images: $(BINARY).bin $(BINARY).hex $(BINARY).srec $(BINARY).list $(BINARY).map
+%.list: %.elf
+	@#printf "  OBJDUMP $(*).list\n"
+	$(Q)$(OBJDUMP) -S $(*).elf > $(*).list
 
-# Flash with ST-Link
-flash: $(BINARY).bin
-	$(STFLASH) write $(BINARY).bin 0x8000000
+%.elf %.map: $(OBJS) $(LDSCRIPT) $(OPENCM3_DIR)/lib/lib$(LIBNAME).a Makefile
+	@#printf "  LD      $(*).elf\n"
+	$(Q)$(LD) $(TGT_LDFLAGS) $(LDFLAGS) $(OBJS) $(LDLIBS) -o $(*).elf
 
-# Compile rules
 %.o: %.c
-	$(Q)$(CC) $(TGT_CFLAGS) $(CFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $@ -c $<
+	@#printf "  CC      $(*).c\n"
+	$(Q)$(CC) $(TGT_CFLAGS) $(CFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).c
 
 %.o: %.S
-	$(Q)$(CC) $(TGT_CFLAGS) $(CFLAGS) -o $@ -c $<
+	@#printf "  CC      $(*).S\n"
+	$(Q)$(CC) $(TGT_CFLAGS) $(CFLAGS) -o $(*).o -c $(*).S
+
+%.o: %.cxx
+	@#printf "  CXX     $(*).cxx\n"
+	$(Q)$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cxx
+
+%.o: %.cpp
+	@#printf "  CXX     $(*).cpp\n"
+	$(Q)$(CXX) $(TGT_CXXFLAGS) $(CXXFLAGS) $(TGT_CPPFLAGS) $(CPPFLAGS) -o $(*).o -c $(*).cpp
 
 clean:
-	$(Q)$(RM) $(BINARY).elf $(BINARY).bin $(BINARY).hex $(BINARY).srec $(BINARY).list $(BINARY).map \
-	          generated.* $(OBJS) $(OBJS:.o=.d)
+	@#printf "  CLEAN\n"
+	$(Q)$(RM) $(GENERATED_BINARIES) generated.* $(OBJS) $(OBJS:%.o=%.d)
 
-.PHONY: all images clean flash
+.PHONY: images clean elf bin hex srec list
 
-# Auto-deps
 -include $(OBJS:.o=.d)
